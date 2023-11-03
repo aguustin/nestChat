@@ -31,6 +31,10 @@ export class Messages{
 
 }
 
+@Schema({
+    timestamps: true
+})
+
 export class UsersInGroup{
     @Prop({
         trim: true
@@ -50,10 +54,18 @@ export class UsersInGroup{
     photoMember: String
 }
 
+@Schema({
+    timestamps: true
+})
+
 export class Admins{
     @Prop()
     adminId: String
 }
+
+@Schema({
+    timestamps: true
+})
 
 export class Groups{
     @Prop({
@@ -81,6 +93,10 @@ export class Groups{
 
 }
 
+@Schema({
+    timestamps: true
+})
+
 export class Chat{
     @Prop({
         trim: true
@@ -96,15 +112,13 @@ export class Chat{
     lastname: String
 
     @Prop()
-    photo: String
+    password: String
 
     @Prop()
-    password: String
+    photo: String
 
     @Prop([Groups])
     groups: Groups[]
-    
 }
-
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);

@@ -2,7 +2,7 @@ import { IsEmail, IsNotEmpty, IsString, IsNumber, IsArray, ValidateNested, IsMon
 import { Type } from "class-transformer";
 import { ObjectId } from "mongoose";
 
-export class MessagesDto{
+class MessagesDto{
     @IsMongoId()
     idMessage: ObjectId
 
@@ -23,9 +23,9 @@ export class MessagesDto{
 
 }
 
-export class UsersInGroupDto{
+class UsersInGroupDto{
     @IsMongoId()
-    idMember: ObjectId
+    idMember: string
 
     @IsEmail()
     mailMember: string
@@ -40,12 +40,11 @@ export class UsersInGroupDto{
     photoMember: string
 }
 
-export class AdminDto{
-    @IsString()
+class AdminDto{
     adminId: string
 }
 
-export class GroupsDto{
+class GroupsDto{
 
     @IsArray()
     @ValidateNested({ each: true })
@@ -65,7 +64,7 @@ export class GroupsDto{
     @ValidateNested({ each: true })
     @Type(() => MessagesDto)
     MessagesDto: MessagesDto[];
-    
+
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() =>  UsersInGroupDto)
@@ -74,10 +73,11 @@ export class GroupsDto{
 
 
 export class ChatDto {
-    @IsEmail()
-    email: string;
 
-    @IsNotEmpty()
+    @IsEmail()
+    mail: string;
+
+    @IsString()
     password: string;
 
     @IsString()

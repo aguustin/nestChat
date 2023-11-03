@@ -1,12 +1,8 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ChatModule } from './chat/chat.module';
 import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
-  imports: [ChatModule, MongooseModule.forRoot('mongodb://127.0.0.1:27017/nestProject')],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [MongooseModule.forRoot('mongodb://127.0.0.1/nestProject'), ChatModule],
 })
 export class AppModule {}
