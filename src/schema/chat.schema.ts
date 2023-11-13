@@ -9,11 +9,6 @@ export type ChatDocument = HydratedDocument<Chat>;
 })
 
 export class Messages{
-    @Prop({
-        trim: true
-    })
-    idMessage: mongoose.Types.ObjectId
-
     @Prop()
     usernameMessage: String
 
