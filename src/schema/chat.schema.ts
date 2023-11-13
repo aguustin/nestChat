@@ -51,7 +51,7 @@ export class UsersInGroup{
     lastnameMember: String
 
     @Prop()
-    photoMember: String
+    memberFilename: String
 }
 
 @Schema({
@@ -71,7 +71,7 @@ export class Groups{
     @Prop({
         trim: true
     })
-    id: mongoose.Types.ObjectId
+    adminId: mongoose.Types.ObjectId
 
     @Prop([Admins])
     admins: Admins[]
@@ -86,7 +86,7 @@ export class Groups{
     members: Number
 
     @Prop([UsersInGroup])
-    usersInGroup: UsersInGroup
+    usersInGroup: UsersInGroup[]
 
     @Prop([Messages])
     messages: Messages[]
@@ -115,7 +115,7 @@ export class Chat{
     password: String
 
     @Prop()
-    photo: String
+    filename: File
 
     @Prop([Groups])
     groups: Groups[]

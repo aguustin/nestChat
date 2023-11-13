@@ -23,7 +23,7 @@ class MessagesDto{
 
 }
 
-class UsersInGroupDto{
+class UsersInGroup{
     @IsMongoId()
     idMember: string
 
@@ -37,19 +37,13 @@ class UsersInGroupDto{
     lastnameMember: string
 
     @IsString()
-    photoMember: string
+    memberFilename: string
 }
 
-class AdminDto{
+class Groups{
+    
+    @IsString()
     adminId: string
-}
-
-class GroupsDto{
-
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => AdminDto)
-    AdminDto: AdminDto[];
 
     @IsString()
     groupName: string
@@ -67,8 +61,8 @@ class GroupsDto{
 
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() =>  UsersInGroupDto)
-    UsersInGroupDto:  UsersInGroupDto[];
+    @Type(() =>  UsersInGroup)
+    UsersInGroupDto:  UsersInGroup[];
 }
 
 
@@ -86,11 +80,10 @@ export class ChatDto {
     @IsString()
     lastname: string
 
-    @IsString()
-    photo: string
+    filename: File
 
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => GroupsDto)
-    GroupsDto: GroupsDto[];
+    @Type(() => Groups)
+    Groups: Groups[];
 }
