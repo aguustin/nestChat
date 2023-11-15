@@ -59,12 +59,10 @@ export class ChatService {
             }
         }
 
-        async updateUserService(idJson, userInfoUpdateJson){  //-------------------------actualizar informacion del perfil del usuario
-            /*const {name, lastname, filename} = userInfoUpdateJson;
-            console.log(userInfoUpdateJson);
-            console.log("filename: ", idJson.idJson, " ", name, " ", lastname, " ", filename);
+        async updateUserService(mail: string, name: string, lastname: string, filename: File){  //-------------------------actualizar informacion del perfil del usuario  //----------------------------------------------------------- ARREGLAR, NO LLEGAN LOS DATOS POR POSTMAN
+            console.log("filename: ", mail , " ", name, " ", lastname, " ", filename);
             const imageUpload = await uploadImageCloudinary(filename);
-            console.log("imageUpload: ", imageUpload);*/
+            console.log("imageUpload: ", imageUpload);
         }
 
 
@@ -87,7 +85,7 @@ export class ChatService {
                 return updateGroups;
         }
 
-        async deleteGroupService(groupId){ //---------------------------------------------borrar grupo
+        async deleteGroupService(groupId){ //---------------------------------------------borrar grupo (ver funcionalidad a ver si funciona)
             console.log(groupId.groupId);
             const deleteGroups = await this.chatModel.updateOne(
                 {"groups._id": groupId.groupId},
@@ -100,7 +98,28 @@ export class ChatService {
 
             return deleteGroups;
         }
-        
+
+        async showGroupsService(userId){   //----------------------------------------- probar esta funcionalidad (deberia traer el documento entero en los que el id del usuario esta dentro de "usersIn")
+            const showGroups = await this.chatModel.aggregate([
+                {
+                    $project: {
+                        groups:{
+                            $filter:{
+                                input: "$groups",
+                                as: "$groups",
+                                cond:{
+                                    $eq: ["$$groups.usersIn.idMember", [userId]]
+                                }
+                            }
+                        }
+                }
+            }
+            ])
+
+            return showGroups;
+        }
+
+
         async getInUserService(getInUserJson){  //-------------------------------------- meter a un usuario a un grupò
             const getInUserParse = JSON.parse(getInUserJson);
             console.log(getInUserParse);
@@ -197,6 +216,10 @@ export class ChatService {
             )
 
             return updateGroupMessages;
+        }
+
+        async getContactsByName(name){ //--------------------------------------------------------------traer una lista de los usuarios que coincidan con el nomobre ingresado en el buscador
+
         }
 
 }

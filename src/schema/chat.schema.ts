@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import { HydratedDocument, trusted } from "mongoose";
 import mongoose from "mongoose";
 
 export type ChatDocument = HydratedDocument<Chat>;
@@ -92,6 +92,43 @@ export class Groups{
     timestamps: true
 })
 
+class ContactMessages{
+    @Prop({
+        trim:true
+    })
+    name: String
+
+    @Prop({
+        trime: true
+    })
+    lastname: String
+    
+    @Prop({
+        trim: true
+    })
+    text: String
+
+    @Prop({
+        trim: true
+    })
+    multimedia: File
+}
+
+export class Contacts{
+    @Prop({
+        trim: true
+    })
+    name: String
+
+    @Prop({
+        trim: true
+    })
+    lastname: String
+
+    @Prop([ContactMessages])
+    contactMessages: ContactMessages[]
+}
+
 export class Chat{
     @Prop({
         trim: true
@@ -114,6 +151,9 @@ export class Chat{
 
     @Prop([Groups])
     groups: Groups[]
+
+    @Prop([Contacts])
+    contacts: Contacts[]
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);

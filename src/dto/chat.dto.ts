@@ -37,6 +37,30 @@ export class UsersInGroupDto{
     memberFilename: string
 }
 
+class ContactMessagesDto{
+
+    name: string
+
+    lastname: string
+
+    text: string
+
+    multimedia: File
+}
+
+export class ContactsDto{
+    @IsString()
+    name: string
+
+    @IsString()
+    lastname: string
+
+    @IsArray()
+    @ValidateNested({each: true})
+    @Type(() => ContactMessagesDto)
+    contactMessages: ContactMessagesDto[]
+}
+
 class Groups{
     
     @IsString()

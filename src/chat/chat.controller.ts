@@ -31,11 +31,10 @@ export class ChatController {
         }
     }
 
-    @Put('/:id')
-    async updateUser(@Param() id: string, @Body() userInfoUpdate: any){
-        const idJson = JSON.stringify(id);
-        const userInfoUpdateJson = JSON.stringify(userInfoUpdate);
-        return this.chatService.updateUserService(id, userInfoUpdate);
+    @Put('/updateUserInfo')  //----------------------------------------------------------- ARREGLAR, NO LLEGAN LOS DATOS POR POSTMAN
+    async updateUser(@Body() mail: string, name: string, lastname: string, filename: File){
+        console.log(mail);
+        return this.chatService.updateUserService(mail, name, lastname, filename);
     }
     
     @Post('/createGroup')
@@ -47,6 +46,11 @@ export class ChatController {
     @Delete('/deleteGroup/:groupId')
     async deleteGroup(@Param() groupId: any){
         return this.chatService.deleteGroupService(groupId);
+    }
+
+    @Post('/showGroups')                            //----------------------------------------- probar esta funcionalidad (deberia traer el documento entero en los que el id del usuario esta dentro de "usersIn")
+    async showGroups(@Body() userId: string){
+        return this.chatService.showGroupsService(userId);
     }
 
     @Post('/getInUser')
@@ -70,6 +74,11 @@ export class ChatController {
     @Post('/sendMessage')
     async sendMessage(@Body() messageBody: MessagesDto){
         return this.chatService.sendMessageService(messageBody)
+    }
+    
+    @Get('/search/:name')  //--------------------------------------------------------------traer una lista de los usuarios que coincidan con el nomobre ingresado en el buscador
+    async getContact(@Param() name: string){
+        return this.chatService.getContactsByName(name);
     }
     
 }
