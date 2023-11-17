@@ -39,21 +39,24 @@ export class UsersInGroupDto{
 
 class ContactMessagesDto{
 
-    name: string
+    userA: string
 
-    lastname: string
+    userB: string
 
     text: string
 
-    multimedia: File
+    multimedia: string
 }
 
 export class ContactsDto{
     @IsString()
-    name: string
+    contactId: string
 
     @IsString()
-    lastname: string
+    contactName: string
+
+    @IsString()
+    contactLastname: string
 
     @IsArray()
     @ValidateNested({each: true})
@@ -94,17 +97,22 @@ export class ChatDto {
 
     @IsString()
     password: string;
-
+    
     @IsString()
     name: string
-
+    
     @IsString()
     lastname: string
-
+    
     filename: File
 
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => Groups)
     Groups: Groups[];
+
+    @IsArray()
+    @ValidateNested({each: true})
+    @Type(() => ContactsDto)
+    Contacts: ContactsDto[];
 }

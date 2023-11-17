@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ChatDto, UsersInGroupDto } from 'src/dto/chat.dto';
+import { ChatDto } from 'src/dto/chat.dto';
 import { Chat, UsersInGroup } from 'src/schema/chat.schema';
 import mongoose from 'mongoose';
 import * as bcrypt from "bcrypt";
@@ -12,34 +12,32 @@ import { uploadImageCloudinary } from 'src/cloudinary.config';
 @Injectable()
 export class ChatService {
   
-    constructor(@InjectModel(Chat.name) private chatModel: Model<Chat>,
-                @InjectModel(UsersInGroup.name) private usersGroupsModel: Model<UsersInGroup>){}
+    constructor(@InjectModel(Chat.name) private chatModel: Model<Chat>){}
 
         async findAll(){
             return this.chatModel.find();
         }
 
-        async create(createUser: ChatDto){  //--------------------------------------crear el usuario
-            const newUser = new this.chatModel(createUser);
-            const checkUser = await this.chatModel.find({mail: newUser.mail});
+        async createUserService(createUser: ChatDto){  //--------------------------------------crear el usuario
+                const checkUser = await this.chatModel.find({mail: createUser.mail});
+                if(checkUser.length > 0){
+                    throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+                }else{
 
-            if(checkUser.length > 0){
-                console.log("usuario ya existe");
-            }else{
-                const salt = bcrypt.genSaltSync(12);
-                const hashed = await bcrypt.hash(newUser.password, salt);
+                    const salt = bcrypt.genSaltSync(12);
+                    const hashed = await bcrypt.hash(createUser.password, salt);
+                    const newUserHashed = new this.chatModel({ 
+                        mail: createUser.mail,
+                        password: hashed,
+                        name: createUser.name,
+                        lastname: createUser.lastname,
+                        groups: [],
+                        contacts:[]
+                    })
     
-                const newUserHashed = new this.chatModel({
-                    mail: newUser.mail,
-                    name: newUser.name,
-                    lastname: newUser.lastname,
-                    password: hashed,
-                    photo: null,
-                    groups: []
-                })
-                
-                return newUserHashed.save();
-            }
+                    return newUserHashed.save();
+                }
+            
         }
 
         async getUser(userInfo: string){  //--------------------------------------obtener el usuario
@@ -218,7 +216,68 @@ export class ChatService {
             return updateGroupMessages;
         }
 
-        async getContactsByName(name){ //--------------------------------------------------------------traer una lista de los usuarios que coincidan con el nomobre ingresado en el buscador
+        async addContactService(contactsDto){
+                const newContact = await this.chatModel.updateOne(
+                    {  _id: contactsDto.userId  },
+                    {
+                        $addToSet:{
+                            contacts:{
+                                _id: new mongoose.Types.ObjectId(),
+                                contactId: contactsDto.contactId,
+                                name: contactsDto.contactName,
+                                lastname: contactsDto.contactLastname,
+                                contactMessages:[]
+                            }
+                        }
+                    },
+                    {
+                        arrayFilters:[{
+                            "i._id": contactsDto.userId
+                        }]
+                    }
+
+                    )
+                return newContact; 
+        }
+
+        async deleteContactService(id, contactId){
+            const userId = new mongoose.Types.ObjectId(id);
+            const contactIdObject = new mongoose.Types.ObjectId(contactId);
+            const deleteContact = await this.chatModel.updateOne(
+                {_id: userId},
+                {
+                    $pull:{
+                        contacts:{$eq: [{_id :contactId }] }
+                    }
+                },
+              
+            )
+
+            return deleteContact;
+        }
+
+        async contactMessageService(userA, userB, message, archive){
+            const userId = new mongoose.Types.ObjectId(userA);
+            const userIdB = new mongoose.Types.ObjectId(userB);
+            console.log(userA, userB, message, archive);
+            /*const updateContactMessages = await this.chatModel.updateOne(
+               {_id: userId},
+               {
+                $addToSet:{
+                    "contacts.$[i].contactMessages":{
+                        userA: userA.userA,
+                        userB: userB.userB,
+                        text: message.message,
+                        multimedia: archive.archive
+                    }
+                }
+               },
+               {
+                arrayFilters:[
+                    {"i._id": userIdB}
+                ]
+               }
+            )*/
 
         }
 

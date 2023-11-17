@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { ChatDto, MessagesDto, UsersInGroupDto } from 'src/dto/chat.dto';
+import { ChatDto, MessagesDto, UsersInGroupDto, ContactsDto } from 'src/dto/chat.dto';
 
 
 @Controller('chat')
@@ -13,12 +13,8 @@ export class ChatController {
     }
 
     @Post('/createUser')
-    create(@Body() body: ChatDto) {
-        try {
-            return this.chatService.create(body);
-        } catch (error) {
-            console.log(error);
-        }
+    async createUser(@Body() createUs: ChatDto) {
+         return this.chatService.createUserService(createUs);
     }
 
     @Post('/loginUser')
@@ -75,10 +71,19 @@ export class ChatController {
     async sendMessage(@Body() messageBody: MessagesDto){
         return this.chatService.sendMessageService(messageBody)
     }
-    
-    @Get('/search/:name')  //--------------------------------------------------------------traer una lista de los usuarios que coincidan con el nomobre ingresado en el buscador
-    async getContact(@Param() name: string){
-        return this.chatService.getContactsByName(name);
+
+    @Post('/addContact')
+    async addContactController(@Body() contactsDto: ContactsDto){
+        return this.chatService.addContactService(contactsDto);
+    }
+
+    @Delete('/deleteContact/:id/:contactId')
+    async deleteContactController(@Param() id, contactId){
+        return this.chatService.deleteContactService(id, contactId)
     }
     
+    @Put('/contactMessage/:userA/:userB/:message/:archive')
+    async contactMessageController(@Param() userA, userB, message, archive){
+        return this.chatService.contactMessageService(userA, userB, message, archive);
+    }
 }
