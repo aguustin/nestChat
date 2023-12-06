@@ -41,7 +41,11 @@ class ContactMessagesDto{
 
     userA: string
 
+    usernameA: string
+
     userB: string
+
+    usernameB: string
 
     text: string
 
@@ -54,9 +58,6 @@ export class ContactsDto{
 
     @IsString()
     contactName: string
-
-    @IsString()
-    contactLastname: string
 
     @IsArray()
     @ValidateNested({each: true})
@@ -99,10 +100,7 @@ export class ChatDto {
     password: string;
     
     @IsString()
-    name: string
-    
-    @IsString()
-    lastname: string
+    username: string
     
     filename: File
 

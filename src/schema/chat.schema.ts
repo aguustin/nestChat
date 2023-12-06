@@ -88,33 +88,6 @@ export class Groups{
 
 }
 
-@Schema({
-    timestamps: true
-})
-
-class ContactMessages{  
-    
-    @Prop({
-        trim:true
-    })
-    userA: String
-    
-    @Prop({
-        trim:true
-    })
-    userB: String
-
-    @Prop({
-        trim: true
-    })
-    text: String
-
-    @Prop({
-        trim: true
-    })
-    multimedia: String
-}
-
 export class Contacts{
 
     @Prop({
@@ -125,15 +98,7 @@ export class Contacts{
     @Prop({
         trim: true
     })
-    contactName: String
-
-    @Prop({
-        trim: true
-    })
-    contactLastname: String
-
-    @Prop([ContactMessages])
-    contactMessages: ContactMessages[]
+    contactUsername: String
 }
 
 @Schema({
@@ -152,10 +117,7 @@ export class Chat{
     @Prop({
         trim: true
     })
-    name: string
-
-    @Prop()
-    lastname: string
+    username: string
 
     @Prop()
     filename: File

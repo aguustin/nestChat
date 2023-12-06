@@ -1,38 +1,41 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, mongo } from 'mongoose';
 import { ChatDto } from 'src/dto/chat.dto';
 import { Chat, UsersInGroup } from 'src/schema/chat.schema';
 import mongoose from 'mongoose';
 import * as bcrypt from "bcrypt";
-//import { v2 as cloudinary } from "cloudinary";
-//import streamifier from "streamifier";
+import { v2 as cloudinary } from "cloudinary";
+import streamifier from "streamifier";
 import { uploadImageCloudinary } from 'src/cloudinary.config';
+import { Contacts } from 'src/schema/messages.schema';
 
 @Injectable()
 export class ChatService {
   
-    constructor(@InjectModel(Chat.name) private chatModel: Model<Chat>){}
+    constructor(
+        @InjectModel(Chat.name) private chatModel: Model<Chat>,
+        @InjectModel(Contacts.name) private contactsModel: Model<Contacts>
+    ){}
+  
 
         async findAll(){
             return this.chatModel.find();
         }
 
-        async createUserService(createUser: ChatDto){  //--------------------------------------crear el usuario
-                const checkUser = await this.chatModel.find({mail: createUser.mail});
-                if(checkUser.length > 0){
+        async createUserService(createUser: any){  //--------------------------------------crear el usuario
+                const checkUser = await this.chatModel.find({mail: createUser.email});
+                
+                if(checkUser.length < 0){
                     throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
                 }else{
-
                     const salt = bcrypt.genSaltSync(12);
                     const hashed = await bcrypt.hash(createUser.password, salt);
                     const newUserHashed = new this.chatModel({ 
-                        mail: createUser.mail,
+                        mail: createUser.email,
                         password: hashed,
-                        name: createUser.name,
-                        lastname: createUser.lastname,
-                        groups: [],
-                        contacts:[]
+                        username: createUser.username,
+                        groups: []
                     })
     
                     return newUserHashed.save();
@@ -40,47 +43,54 @@ export class ChatService {
             
         }
 
-        async getUser(userInfo: string){  //--------------------------------------obtener el usuario
+        async getUser(userInfo: any){  //--------------------------------------obtener el usuario
             const userInfoRes = JSON.parse(userInfo);
-            const {mail, password} = userInfoRes;
-            const userExist = await this.chatModel.findOne({mail: mail});
+            const {email, password} = userInfoRes;
+            const userExist = await this.chatModel.findOne({mail: email});
             if(userExist != null){
                 let confirmPassword = await bcrypt.compare(password, userExist.password);
                 if(confirmPassword > 0){
-                    console.log("usuario confirmado");
+                    console.log("usuario confirmado", userExist);
+                    return userExist;
                 }else{
                     console.log("no se encontro la contraseña");
                 }
-                return userExist;
             }else{
                 console.log("usuario no existe");
             }
         }
 
         async updateUserService(mail: string, name: string, lastname: string, filename: File){  //-------------------------actualizar informacion del perfil del usuario  //----------------------------------------------------------- ARREGLAR, NO LLEGAN LOS DATOS POR POSTMAN
-            console.log("filename: ", mail , " ", name, " ", lastname, " ", filename);
             const imageUpload = await uploadImageCloudinary(filename);
-            console.log("imageUpload: ", imageUpload);
         }
 
 
         async createGroupService(createGroupJson){  //--------------------------------------crear un grupo
             const createGroupParse = JSON.parse(createGroupJson);
-            //const idObject = new mongoose.Types.ObjectId(createGroupParse.id);
-            console.log(createGroupParse.Groups[0].groupName);
-
+            console.log(createGroupParse.id);
                 const updateGroups = await this.chatModel.updateOne(
                     {_id: createGroupParse.id},
                     {$addToSet:{
                        groups:{
                             adminId:createGroupParse.id,
-                            groupName:createGroupParse.Groups[0].groupName,
-                            groupProfile:createGroupParse.Groups[0].groupProfile
-                        }
+                            groupName:createGroupParse.groupName,
+                            groupProfile:createGroupParse.groupProfile
+                       },
                     }}   
                 )
                
                 return updateGroups;
+        }
+
+        async openGroupChatService(ids){
+
+            const getGroup = await this.chatModel.find(
+                {_id: ids.sessionId},
+                {
+                    groups:{ $elemMatch: {_id: ids.groupId}}
+                }
+            )
+            return getGroup;
         }
 
         async deleteGroupService(groupId){ //---------------------------------------------borrar grupo (ver funcionalidad a ver si funciona)
@@ -98,24 +108,9 @@ export class ChatService {
         }
 
         async showGroupsService(userId){   //----------------------------------------- probar esta funcionalidad (deberia traer el documento entero en los que el id del usuario esta dentro de "usersIn")
-            const showGroups = await this.chatModel.aggregate([
-                {
-                    $project: {
-                        groups:{
-                            $filter:{
-                                input: "$groups",
-                                as: "$groups",
-                                cond:{
-                                    $eq: ["$$groups.usersIn.idMember", [userId]]
-                                }
-                            }
-                        }
-                }
-            }
-            ])
-
+            const showGroups = await this.chatModel.find({_id: userId.userId});
             return showGroups;
-        }
+         }
 
 
         async getInUserService(getInUserJson){  //-------------------------------------- meter a un usuario a un grupò
@@ -145,8 +140,8 @@ export class ChatService {
                             "groups.$[i].usersInGroup": {
                                 idMember: getInUserParse.idMember,
                                 mailMember: getInUserParse.mailMember,
-                                nameMember: getInUserParse.nameMember,
-                                lastnameMember: getInUserParse.lastnameMember,
+                                //nameMember: getInUserParse.nameMember,
+                                //lastnameMember: getInUserParse.lastnameMember,
                                 memberFilename: getInUserParse.memberFilename
                             }
                         }
@@ -181,6 +176,7 @@ export class ChatService {
                     ]
                 }
             )
+
             return deleteUser;
         }
 
@@ -216,69 +212,229 @@ export class ChatService {
             return updateGroupMessages;
         }
 
-        async addContactService(contactsDto){
-                const newContact = await this.chatModel.updateOne(
-                    {  _id: contactsDto.userId  },
-                    {
-                        $addToSet:{
-                            contacts:{
-                                _id: new mongoose.Types.ObjectId(),
-                                contactId: contactsDto.contactId,
-                                name: contactsDto.contactName,
-                                lastname: contactsDto.contactLastname,
-                                contactMessages:[]
-                            }
-                        }
-                    },
-                    {
-                        arrayFilters:[{
-                            "i._id": contactsDto.userId
-                        }]
-                    }
-
-                    )
-                return newContact; 
-        }
-
-        async deleteContactService(id, contactId){
-            const userId = new mongoose.Types.ObjectId(id);
-            const contactIdObject = new mongoose.Types.ObjectId(contactId);
-            const deleteContact = await this.chatModel.updateOne(
-                {_id: userId},
+        async addContactService(addContact){
+            const findUser = await this.chatModel.find({mail: addContact.mail});   
+            const contactId = findUser[0]._id.toString();
+        
+            await this.chatModel.updateOne(
+                {  _id: addContact.userId  },
                 {
-                    $pull:{
-                        contacts:{$eq: [{_id :contactId }] }
+                    $addToSet:{
+                        contacts:{
+                            _id: new mongoose.Types.ObjectId(),
+                            contactId: contactId,
+                            contactUsername: findUser[0].username,
+                        }
                     }
                 },
-              
+                {
+                    arrayFilters:[{
+                        "i._id": addContact.userId
+                    }]
+                }
+
+                )
+
+            const newContact = await this.contactsModel.updateOne(
+                {  _id: addContact.userId  },
+                {
+                     $addToSet:{
+                        contacts:{
+                            contactId: contactId,
+                            contactName: findUser[0].username,
+                            contactMessages:[]
+                        }
+                    }
+                },
+
+                )
+            return newContact; 
+        }
+
+        async deleteContactService(ids){  //-------------------------------SEGUIR CON ESTO
+            console.log(ids.contactId);
+            const idObject = new mongoose.Types.ObjectId(ids.contactId);
+            const deleteContact = await this.chatModel.updateOne(
+                {_id: ids.sessionId},
+                {
+                    $pull: {
+                        contacts: { contactId: ids.contactId} 
+                     }
+                    
+                }
             )
 
             return deleteContact;
         }
 
-        async contactMessageService(userA, userB, message, archive){
-            const userId = new mongoose.Types.ObjectId(userA);
-            const userIdB = new mongoose.Types.ObjectId(userB);
-            console.log(userA, userB, message, archive);
-            /*const updateContactMessages = await this.chatModel.updateOne(
-               {_id: userId},
+        async openContactChatService(ids){
+            const idsSession = ids.sessionId;
+            const idsContact = ids.contactId;
+            console.log(ids.contactId);
+            const defId = idsSession.concat(idsContact.toString());
+            const defIdB = idsContact.concat(idsSession.toString());
+            
+            const firstCheck = await this.contactsModel.find({conversationId: defId});
+            
+            if(firstCheck.length > 0){
+                console.log(firstCheck);
+                return firstCheck;
+            }
+            
+            const secondCheck = await this.contactsModel.find({conversationId: defIdB});
+            
+            if(secondCheck.length > 0){
+                console.log("abcd");
+                return secondCheck
+            }
+            console.log("ssssss");
+            const createConversation = new this.contactsModel({
+                conversationId: defId,
+                contactId: ids.contactId,
+                contactMessages:[]
+            })
+
+            return createConversation.save();
+        }
+
+
+        async contactMessageService(messageData){ //--------------------------------------------------seguir desde aca para crear las conversaciones mediante encontrar los ids concatenados
+            const concatIds = messageData.userA.concat(messageData.userB.toString());
+            const concatIdsB = messageData.userB.concat(messageData.userA.toString());
+            const firstCheck = await this.contactsModel.find({conversationId: concatIds});
+
+            if(firstCheck.length > 0){
+                await this.contactsModel.updateOne(
+                    {conversationId: concatIds},
+                    {
+                        $addToSet:{
+                            contactMessages:{
+                                text: messageData.text,
+                                multimedia: messageData.multimedia
+                            }
+                        }
+                    }
+                )
+
+                const getTheLastMsg = await this.contactsModel.find().sort({_id: -1}).limit(1);
+
+                return getTheLastMsg;
+            }
+
+            const secondCheck = await this.contactsModel.find({conversationId: concatIdsB});
+
+            if(secondCheck.length > 0){
+                const updateConversation = await this.contactsModel.updateOne(
+                    {conversationId: concatIdsB},
+                    {
+                        $addToSet:{
+                            contactMessages:{
+                               // usernameA: messageData.user,
+                               // usernameB: messageData.usernameB,
+                                text: messageData.text,
+                                multimedia: messageData.multimedia
+                            }
+                        }
+                    }
+                )
+                
+                return updateConversation;
+            }
+
+        }
+
+        async getAllConversations(){
+            const getAll = await this.contactsModel.find();
+
+            return getAll;
+        }
+
+      
+
+
+        /*async contactMessageService(messageData){  //--------------------------------envia msj al contacto individual
+            const userIdA = new mongoose.Types.ObjectId(messageData.userA);
+            const userIdB = new mongoose.Types.ObjectId(messageData.userB);
+
+            const getChatUpdate = await this.chatModel.aggregate([
+                {
+                  "$match": {
+                    $and:[{_id: userIdA}, {_id: userIdB}]
+                  }
+                },
+                {
+                  "$unwind": "$contacts"
+                },
+                {
+                  "$match": {
+                    $and:[{"contacts.contactId": userIdB}, {"contacts.contactId":userIdA }]
+                  }
+                },
+                {
+                    $group: {
+                        _id: "$_id",
+                        contacts:{
+                            $push: "$contacts"
+                        }
+                    }
+                }
+              ])
+
+            await this.chatModel.updateOne(
+               {_id: userIdA},
                {
                 $addToSet:{
                     "contacts.$[i].contactMessages":{
-                        userA: userA.userA,
-                        userB: userB.userB,
-                        text: message.message,
-                        multimedia: archive.archive
+                        userA: messageData.userA,
+                        usernameA: messageData.usernameA,
+                        userB: messageData.userB,
+                        usernameB: messageData.usernameB,
+                        text: messageData.text,
+                        multimedia: messageData.multimedia
                     }
                 }
                },
                {
                 arrayFilters:[
-                    {"i._id": userIdB}
+                    {"i.contactId": userIdB}
                 ]
                }
-            )*/
+            )
 
+
+            return getChatUpdate;
         }
+
+        async openContactChatService(ids){ //---------------------------------------- obtiene los msj del contacto individual
+           
+            const userId = new mongoose.Types.ObjectId(ids.sessionId);
+            const contId = new mongoose.Types.ObjectId(ids.contactId);
+
+            const getByUserA = await this.chatModel.aggregate([
+                {
+                  "$match": {
+                    $or:[{_id: userId}, {_id: contId}]
+                  }
+                },
+                {
+                  "$unwind": "$contacts"
+                },
+                {
+                  "$match": {
+                    $or:[{"contacts.contactId": contId}, {"contacts.contactId":userId }]
+                  }
+                },
+                {
+                    $group: {
+                        _id: "$_id",
+                        contacts:{
+                            $push: "$contacts"
+                        }
+                    }
+                }
+              ])
+
+            return getByUserA;
+        }*/
 
 }
