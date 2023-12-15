@@ -13,9 +13,6 @@ export class Messages{
     usernameMessage: String
 
     @Prop()
-    lastnameMessage: String
-
-    @Prop()
     userPhotoMessage: String
 
     @Prop()
@@ -23,8 +20,8 @@ export class Messages{
 
     @Prop()
     messageArchive: String
-
 }
+
 
 @Schema({
     timestamps: true
@@ -40,14 +37,12 @@ export class UsersInGroup{
     mailMember: String
 
     @Prop()
-    nameMember: String
-
-    @Prop()
-    lastnameMember: String
+    usernameMember: String
 
     @Prop()
     memberFilename: String
 }
+
 
 @Schema({
     timestamps: true
@@ -57,6 +52,7 @@ export class Admins{
     @Prop()
     adminId: String
 }
+
 
 @Schema({
     timestamps: true
@@ -101,6 +97,7 @@ export class Contacts{
     contactUsername: String
 }
 
+
 @Schema({
     timestamps: true
 })
@@ -121,6 +118,9 @@ export class Chat{
 
     @Prop()
     filename: File
+
+    @Prop()
+    chatBackground: String
 
     @Prop([Groups])
     groups: Groups[]

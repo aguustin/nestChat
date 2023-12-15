@@ -23,6 +23,7 @@ export class ChatService {
             return this.chatModel.find();
         }
 
+
         async createUserService(createUser: any){  //--------------------------------------crear el usuario
                 const checkUser = await this.chatModel.find({mail: createUser.email});
                 
@@ -43,6 +44,7 @@ export class ChatService {
             
         }
 
+
         async getUser(userInfo: any){  //--------------------------------------obtener el usuario
             const userInfoRes = JSON.parse(userInfo);
             const {email, password} = userInfoRes;
@@ -59,6 +61,7 @@ export class ChatService {
                 console.log("usuario no existe");
             }
         }
+        
 
         async updateUserService(mail: string, name: string, lastname: string, filename: File){  //-------------------------actualizar informacion del perfil del usuario  //----------------------------------------------------------- ARREGLAR, NO LLEGAN LOS DATOS POR POSTMAN
             const imageUpload = await uploadImageCloudinary(filename);
@@ -82,35 +85,28 @@ export class ChatService {
                 return updateGroups;
         }
 
-        async openGroupChatService(ids){
 
+        async openGroupChatService(ids){
+         
             const getGroup = await this.chatModel.find(
                 {_id: ids.sessionId},
                 {
                     groups:{ $elemMatch: {_id: ids.groupId}}
                 }
             )
+            console.log(getGroup);
             return getGroup;
         }
 
-        async deleteGroupService(groupId){ //---------------------------------------------borrar grupo (ver funcionalidad a ver si funciona)
-            console.log(groupId.groupId);
-            const deleteGroups = await this.chatModel.updateOne(
-                {"groups._id": groupId.groupId},
-                {
-                    $pull:{
-                        "groups": {_id: groupId.groupId}
-                    }
-                }
-            )
-
-            return deleteGroups;
+        async showContactsService(userId){   //----------------------------------------- probar esta funcionalidad (deberia traer el documento entero en los que el id del usuario esta dentro de "usersIn")
+            const showGroups = await this.chatModel.find({_id: userId.userId});
+            return showGroups;
         }
 
         async showGroupsService(userId){   //----------------------------------------- probar esta funcionalidad (deberia traer el documento entero en los que el id del usuario esta dentro de "usersIn")
             const showGroups = await this.chatModel.find({_id: userId.userId});
             return showGroups;
-         }
+        }
 
 
         async getInUserService(getInUserJson){  //-------------------------------------- meter a un usuario a un grupò
@@ -155,8 +151,8 @@ export class ChatService {
                 );
                 return updateMembers;
             }
-
         }
+
 
         async deleteUserService(deleteUserJson){  //--------------------------------------Borrar usuario de un grupo
             const deleteUserParse = JSON.parse(deleteUserJson);
@@ -180,6 +176,7 @@ export class ChatService {
             return deleteUser;
         }
 
+
         async searchUserService(username){ //---------------------------- buscar usuario por su nombre con regex (%LIKE%)
             const usernameParse = username.name;
             const searchUser = await this.chatModel.find({ "name": { $regex: usernameParse } });    
@@ -187,15 +184,16 @@ export class ChatService {
         }
 
 
-        async sendMessageService(messageBody){ //actualizar mensajes de un grupo
-            console.log(messageBody.messageBody);
-            const updateGroupMessages = await this.chatModel.updateOne(
+        async sendMessageGroupService(messageBody){ //actualizar mensajes de un grupo
+            console.log("gorupid: ", messageBody.groupId);
+            const groupFilter = new mongoose.Types.ObjectId(messageBody.groupId);
+            await this.chatModel.updateOne(
                 {"groups._id": messageBody.groupId},
                 {
                     $addToSet:{
                         "groups.$[i].messages":{
+                            userIdMessage: messageBody.userIdMessage,
                             usernameMessage: messageBody.usernameMessage,
-                            lastnameMessage: messageBody.lastnameMessage,
                             userPhotoMessage: messageBody.userPhotoMessage,
                             messageBody: messageBody.messageBody,
                             messageArchive: messageBody.messageArchive
@@ -204,13 +202,29 @@ export class ChatService {
                 },
                 {
                     arrayFilters:[
-                        {"i._id": messageBody.groupId}
+                        {"i._id": groupFilter}
                     ]
                 }
             )
 
+            const updateGroupMessages = await this.chatModel.aggregate([
+                { $match: { 'groups._id': groupFilter } },
+                {
+                  $project: {
+                    groups: {
+                      $filter: {
+                        input: '$groups',
+                        as: 'groups',
+                        cond: { $eq: ['$$groups._id', groupFilter] },
+                      },
+                    },
+                  },
+                },
+              ]);
+
             return updateGroupMessages;
         }
+
 
         async addContactService(addContact){
             const findUser = await this.chatModel.find({mail: addContact.mail});   
@@ -251,11 +265,26 @@ export class ChatService {
             return newContact; 
         }
 
+
+        async deleteGroupService(groupId){ //---------------------------------------------borrar grupo (ver funcionalidad a ver si funciona)
+            console.log(groupId.groupId);
+            const deleteGroups = await this.chatModel.updateOne(
+                {"groups._id": groupId.groupId},
+                {
+                    $pull:{
+                        groups: {_id: groupId.groupId}
+                    }
+                }
+            )
+
+            return deleteGroups;
+        }
+
         async deleteContactService(ids){  //-------------------------------SEGUIR CON ESTO
-            console.log(ids.contactId);
-            const idObject = new mongoose.Types.ObjectId(ids.contactId);
-            const deleteContact = await this.chatModel.updateOne(
-                {_id: ids.sessionId},
+            const idSessionObject = new mongoose.Types.ObjectId(ids.sessionId);
+          
+            await this.chatModel.updateOne(
+                {_id: idSessionObject},
                 {
                     $pull: {
                         contacts: { contactId: ids.contactId} 
@@ -264,30 +293,27 @@ export class ChatService {
                 }
             )
 
-            return deleteContact;
+            return 1;
         }
 
         async openContactChatService(ids){
             const idsSession = ids.sessionId;
             const idsContact = ids.contactId;
-            console.log(ids.contactId);
             const defId = idsSession.concat(idsContact.toString());
             const defIdB = idsContact.concat(idsSession.toString());
             
             const firstCheck = await this.contactsModel.find({conversationId: defId});
             
             if(firstCheck.length > 0){
-                console.log(firstCheck);
                 return firstCheck;
             }
             
             const secondCheck = await this.contactsModel.find({conversationId: defIdB});
             
             if(secondCheck.length > 0){
-                console.log("abcd");
                 return secondCheck
             }
-            console.log("ssssss");
+
             const createConversation = new this.contactsModel({
                 conversationId: defId,
                 contactId: ids.contactId,
@@ -299,6 +325,7 @@ export class ChatService {
 
 
         async contactMessageService(messageData){ //--------------------------------------------------seguir desde aca para crear las conversaciones mediante encontrar los ids concatenados
+            console.log(messageData.userB);
             const concatIds = messageData.userA.concat(messageData.userB.toString());
             const concatIdsB = messageData.userB.concat(messageData.userA.toString());
             const firstCheck = await this.contactsModel.find({conversationId: concatIds});
@@ -309,6 +336,7 @@ export class ChatService {
                     {
                         $addToSet:{
                             contactMessages:{
+                                userId: messageData.userA,
                                 text: messageData.text,
                                 multimedia: messageData.multimedia
                             }
@@ -337,7 +365,6 @@ export class ChatService {
                         }
                     }
                 )
-                
                 return updateConversation;
             }
 
@@ -345,7 +372,6 @@ export class ChatService {
 
         async getAllConversations(){
             const getAll = await this.contactsModel.find();
-
             return getAll;
         }
 
@@ -437,4 +463,7 @@ export class ChatService {
             return getByUserA;
         }*/
 
+        async deleteConversation(){
+            await this.contactsModel.deleteMany({_id: "656f168c6bcbbb3893d16e19"});
+        }
 }

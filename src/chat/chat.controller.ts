@@ -38,6 +38,11 @@ export class ChatController {
         return this.chatService.createGroupService(createGroupJson);
     }
 
+    @Get('/showContacts/:userId')                            //----------------------------------------- probar esta funcionalidad (deberia traer el documento entero en los que el id del usuario esta dentro de "usersIn")
+    async showContacts(@Param() userId: string){
+        return this.chatService.showContactsService(userId);
+    }
+
     @Get('/showGroups/:userId')                            //----------------------------------------- probar esta funcionalidad (deberia traer el documento entero en los que el id del usuario esta dentro de "usersIn")
     async showGroups(@Param() userId: string){
         return this.chatService.showGroupsService(userId);
@@ -96,8 +101,18 @@ export class ChatController {
         return this.chatService.contactMessageService(messageData);
     }
 
+    @Post('/sendMessageGroup')
+    async sendMessageGroupChatController(@Body() messageData: any){
+        return this.chatService.sendMessageGroupService(messageData);
+    }
+
     @Get('/conversations')
     async getConversationsController(){
         return this.chatService.getAllConversations();
+    }
+
+    @Delete('/deleteConversation')
+    async deleteConversationController(){
+        return this.chatService.deleteConversation();
     }
 }

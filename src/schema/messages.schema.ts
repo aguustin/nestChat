@@ -12,7 +12,7 @@ class ContactMessages{
     @Prop({
         trim:true
     })
-    userA: String
+    userId: String
     
     @Prop({
         trim:true
