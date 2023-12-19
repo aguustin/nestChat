@@ -1,12 +1,15 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { loginUserRequest, showContactRequest, showGroupRequest, signInUserRequest, addConctactRequest } from "../api/userDataRequest";
 import { deleteContactRequest, deleteGroupRequest } from "../api/chatRequest";
+import ChatContext from "./chatContext";
 
 const UserDataContext = createContext();
 
 export const UserDataProvider = ({children}) => {
     const [session, setSession] = useState([]);
     const [contactsData, setContactsData] = useState([]);
+    const {setChatData} = useContext(ChatContext);
+
 
     useEffect(() => {
         const info = JSON.parse(localStorage.getItem('session'));
@@ -30,12 +33,14 @@ export const UserDataProvider = ({children}) => {
 
     const showContactContext = async (userId) => {
         const res = await showContactRequest(userId);
+        console.log("asdasdas");
+        setChatData(null);
         setContactsData(res.data[0].contacts);
     }
 
     const showGroupsContext = async (userId) => {
         const res = await showGroupRequest(userId);
-        console.log(res.data);
+        setChatData(null);
         setContactsData(res.data[0].groups);
     }
 

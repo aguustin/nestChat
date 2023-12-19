@@ -14,15 +14,15 @@ export const ChatContextProvider = ({children}) => {
 
     const openGroupChatContext = async (sessionId, groupId) => {
         const res = await openGroupChatRequest(sessionId, groupId);
+        setChatData();
         setGroupChat(res.data);
         console.log("groupChat: ", groupChat);
-        setChatData();
     }
 
     const openContactChatContext = async (sessionId, contactId) => {
         const res = await openContactChatRequest(sessionId, contactId);
-        setChatData(res.data);
         setGroupChat();
+        setChatData(res.data);
         setConversationData(res.data[0]?.contactMessages)
         //console.log("contacts data: ",contactsData);
     }

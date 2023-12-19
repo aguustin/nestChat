@@ -276,7 +276,7 @@ label, input{
 }
 
 .send-messages form{
-    width: 100%;
+    width: 70%;
 }
 
 .send-messages button{
@@ -286,7 +286,7 @@ label, input{
 
 .send-messages input{
     height: 40px;
-    width: 70%;
+    width: 90%;
     margin-left: 1rem;
     padding-left: 1rem;
     border: none;
@@ -363,34 +363,14 @@ label, input{
     position: fixed;
     width: 300px;
     bottom: 4rem;
-    right: 6rem;
+    right: 9rem;
     border-radius: 10px;
     background-color: white;
     display: flex;
     flex-wrap: wrap;
     box-shadow: -1px -1px 5px 0px rgba(0,0,0,0.75);
--webkit-box-shadow: -1px -1px 5px 0px rgba(0,0,0,0.75);
--moz-box-shadow: -1px -1px 5px 0px rgba(0,0,0,0.75);
-}
-
-.emojis-container > div{
-    height: 60px;
-    width: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.emojis-container button{
-    cursor: pointer;
-    border: none;
-    background-color: transparent;
-}
-
-.emojis-container > div:hover{
-    cursor: pointer;
-    background-color: rgb(241, 241, 241);
-    transition: background-color .3s;
+    -webkit-box-shadow: -1px -1px 5px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: -1px -1px 5px 0px rgba(0,0,0,0.75);
 }
 
 #search{
